@@ -12,8 +12,9 @@ const loader = new GLTFLoader();
 
 let info = document.getElementById('info');
 
-let iiss = true;
-
+//let iiss = true;
+let clock = new THREE.Clock();
+let delta = 0;
 let colors = {
     white: 0xe5dccc,
     gray: 0xccbcbc,
@@ -33,12 +34,12 @@ let submarinePropeller = new Group();
 let bomb = new THREE.Object3D();
 let pause = false, up = false, down = false;
 
-let moveSpeed = 0.2;
+let moveSpeed = 40;
 let upperBorder = 40;
 let bottomBorder = 2;
 
 const bombArrays = new THREE.Group();
-let bombSpeed = 0.04;
+let bombSpeed = 20;
 let mousePos = {};
 let bombArrayCounter = 0;
 let inter = false;
@@ -240,7 +241,8 @@ function loop(){
     
     
     if(pause == false){
-        bottom.mesh.rotation.z += .003;  
+        delta = clock.getDelta();
+        bottom.mesh.rotation.z += .3*delta;  
         bombUpdate(); 
         submarineUpdate();   
         
@@ -315,7 +317,7 @@ function bombUpdate(){
             
         }    
         
-            array.translateX(-bombSpeed);
+            array.translateX(-bombSpeed*delta);
             
             
         
@@ -332,13 +334,13 @@ function bombUpdate(){
 }
 function submarineUpdate(){
     if (up == true && submarine.scene.position.y < upperBorder) {
-        submarine.scene.translateY( moveSpeed); 
+        submarine.scene.translateY( moveSpeed * delta); 
         
     }
     if (down ==true && submarine.scene.position.y > bottomBorder) {
-        submarine.scene.translateY( -moveSpeed);
+        submarine.scene.translateY( -moveSpeed *delta);
     }
-    submarinePropeller.rotateX(0.08);  
+    submarinePropeller.rotateX(5*delta);  
 }
 function check() {
 }
