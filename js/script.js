@@ -42,6 +42,7 @@ const bombArrays = new THREE.Group();
 let bombSpeed = 20;
 let mousePos = {};
 let bombArrayCounter = 0;
+let bombStartCounter = 0;
 let inter = false;
 addInfo('bombArrayCounterInfo',bombArrayCounter, info);
 addInfo('intersection', inter, info);
@@ -96,13 +97,26 @@ function keyboardHandler() {
         
         switch (e.key) {
             case " ":
+                
                 if (pause==false) {
+                    
                     clearInterval(window.timer);
+                    scene.getObjectByName('subBox').visible = true;
+                    scene.traverse(function(child) {
+                        if (child.name === "bombBoxHelper") {
+                            child.visible = true;
+                        }});
                     pause = true;
                 }
                 else {
+                    
                     callTimer();
                     pause =false;
+                    scene.getObjectByName('subBox').visible = false;
+                    scene.traverse(function(child) {
+                        if (child.name === "bombBoxHelper") {
+                            child.visible = false;
+                        }});
                 }
                 break;
             case "w":
@@ -238,10 +252,10 @@ function createBottom(){
 }
 
 function loop(){
-    
+    delta = clock.getDelta();
     
     if(pause == false){
-        delta = clock.getDelta();
+        
         bottom.mesh.rotation.z += .3*delta;  
         bombUpdate(); 
         submarineUpdate();   
@@ -278,19 +292,6 @@ function loop(){
                     }, 10);
                 }
                 updateInfo('intersection', inter);
-                /*if (iiss == true) {
-                    //console.log(child.parent.position);
-                    //.log(submarine.scene.position);
-                    console.log('subbox');
-                    console.log(subBox);
-                    console.log('bombBox');
-                    console.log(bombBox);
-                    
-                    iiss =false;
-                    setTimeout(() => {
-                        iiss =true;
-                    }, 1000);
-                }*/
                 
             }
           });
@@ -309,20 +310,15 @@ function loop(){
 
 
 function bombUpdate(){
-    for (let i = 0; i < bombArrayCounter; i++) {
-        let array = bombArrays.getObjectByName('bombArray' + i)
-        for (let i = 0; i < array.children.length; i++) {
-            
-            let bomb = array.children[i];
-            
-        }    
-        
+    for (let i = bombStartCounter; i < bombArrayCounter; i++) {
+        let array = bombArrays.getObjectByName('bombArray' + i);
             array.translateX(-bombSpeed*delta);
             
             
         
         if (array.position.x<-150) {
-            array.position.setX(100);
+            bombArrays.remove(bombArrays.getObjectByName('bombArray' + i));
+            bombStartCounter++;
         }
         
     }
@@ -363,6 +359,7 @@ async function loadSubmarine(){
     
     let boxHelper = new THREE.BoxHelper( submarine.scene, 0xff0000 );
         boxHelper.name = 'subBox';
+        boxHelper.visible = false;
         submarine.scene.add(boxHelper);
     
 }
@@ -393,6 +390,7 @@ function createBombs(){
         
         let boxHelper = new THREE.BoxHelper( obj, 0xffff00 );
         boxHelper.name = 'bombBoxHelper';
+        boxHelper.visible = false;
         obj.add(boxHelper);
 
         
