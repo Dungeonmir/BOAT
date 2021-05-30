@@ -271,7 +271,7 @@ function loop(){
                 inter = subBox.intersectsBox(bombBox);
                 if (inter ==true) {
                     
-                    setTwimeout(() => {
+                    setTimeout(() => {
                         console.log('intersect');
                     }, 10);
                 }
