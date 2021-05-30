@@ -1,0 +1,30 @@
+*{
+  margin: 0;
+  padding: 0;
+}
+.sea {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	overflow: hidden; 
+	background: linear-gradient(#3440e2, #0d0841);
+}
+#info{
+	position: absolute;
+	top: 10px;
+	left: 100px;
+	background-color: #888888;
+	opacity: .5;
+	padding: 2px 5px;
+	width: fit-content;
+	height: fit-content;
+	border-radius: 7px;
+	pointer-events: none;
+}
+#info p{
+	opacity: 1;
+}
+#stats{
+	position: absolute;
+	top: 100px;
+}
