@@ -11,10 +11,9 @@
 }
 #info{
 	position: absolute;
-	top: 10px;
-	left: 100px;
-	background-color: #888888;
-	opacity: .5;
+	top: 5px;
+	left: 85px;
+	background-color: #03032b;
 	padding: 2px 5px;
 	width: fit-content;
 	height: fit-content;
@@ -22,7 +21,7 @@
 	pointer-events: none;
 }
 #info p{
-	opacity: 1;
+	color: aquamarine;
 }
 #stats{
 	position: absolute;

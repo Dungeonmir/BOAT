@@ -301,13 +301,13 @@ function loop(){
                 submarine.scene.getWorldPosition(vec1);
                 child.getWorldPosition(vec2);
 
-                subBox.min.x += vec1.x;
+                subBox.min.x += vec1.x-1;
                 subBox.min.y += vec1.y;
-                subBox.min.z += vec1.z;
+                subBox.min.z += vec1.z-5;
 
-                subBox.max.x += vec1.x;
+                subBox.max.x += vec1.x+1;
                 subBox.max.y += vec1.y;
-                subBox.max.z += vec1.z;
+                subBox.max.z += vec1.z+5;
                 bombBox.min.x += vec2.x;
                 bombBox.min.y += vec2.y;
                 bombBox.min.z += vec2.z;
@@ -391,6 +391,24 @@ function bombUpdate(){
     
 }
 function submarineUpdate(){
+    if (submarine.scene) {
+        if (clock.elapsedTime<1) {
+            submarine.scene.translateY(moveSpeed/2*delta);
+        }
+        if(Math.floor(clock.elapsedTime)%2==0){
+            submarine.scene.translateZ(2*delta);
+        } 
+        else{
+            submarine.scene.translateZ(-2*delta);
+        }
+        if (Math.random()<0.5) {
+            submarine.scene.translateX(2*delta);
+        }
+        else{
+            submarine.scene.translateX(-2*delta);
+        }
+    }
+    
     if (up == true && submarine.scene.position.y < upperBorder) {
         submarine.scene.translateY( moveSpeed * delta); 
         
@@ -399,6 +417,7 @@ function submarineUpdate(){
         submarine.scene.translateY( -moveSpeed *delta);
     }
     submarinePropeller.rotateX(bombSpeed/2*delta);  
+
 }
 async function loadSubmarine(){
     //console.log('creating submarine');
