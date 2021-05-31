@@ -198,13 +198,12 @@ function createScene() {
 		farSubmarine
 		);
        
-	camera.position.x = -36.1;
-	camera.position.y = 46.1838221607173;
-	camera.position.z = 43.891655291124394;
-
-    camera.rotation.x = -0.7767204360636446;
-    camera.rotation.y = -1.0613354406014759;
-    camera.rotation.z =  -0.7091121719464398;
+	camera.position.x = -44;
+	camera.position.z = 33;
+	camera.position.y =28;
+    camera.rotation.x = -0.46993949433741544;
+    camera.rotation.y = -1.0001786311740763;
+    camera.rotation.z =  -0.40392160424921664;
     
 	camera.quaternion.w =  0.825161865567765;
     camera.quaternion.x = -0.2147798222998377;
@@ -409,20 +408,16 @@ function submarineUpdate(){
         if (clock.elapsedTime<1) {
             submarine.scene.translateY(moveSpeed/2*delta);
         }
-        if(Math.floor(clock.elapsedTime)%2==0 && clock.elapsedTime>1){
-            submarine.scene.translateZ(2*delta);
+        let r = Math.random();
+        if(r<0.5 && clock.elapsedTime>1){
+            
             submarine.scene.rotation.x += delta/4;
         } 
-        else{
-            submarine.scene.translateZ(-2*delta);
+        else if(r && clock.elapsedTime>1){
+            
             submarine.scene.rotation.x -= delta/4;
         }
-        if (Math.random()<0.5) {
-            submarine.scene.translateX(2*delta);
-        }
-        else{
-            submarine.scene.translateX(-2*delta);
-        }
+        
     }
     
     if (up == true && submarine.scene.position.y < upperBorder) {
@@ -576,7 +571,7 @@ function createBombs(){
         
         
         obj.name = 'bomb' + i;
-        let randPosition = Math.floor( Math.random()*5*amount);
+        let randPosition = Math.floor( Math.random()*7*amount);
         let randPosition2 = ( Math.random()*5)-10;
         let randPosition3 = ( Math.random()*8)-4;
         obj.position.set(randPosition2+400, randPosition, randPosition3);
