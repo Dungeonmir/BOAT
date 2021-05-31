@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Box3, Box3Helper, DirectionalLightHelper, Group, Object3D, ObjectLoader, Vector3 } from 'three';
+import { Box3, Box3Helper, DirectionalLightHelper, Group, MathUtils, Object3D, ObjectLoader, SpotLightHelper, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -29,15 +29,18 @@ farSubmarine, HEIGHT, WIDTH, renderer, container;
 
 let hemisphereLight, shadowLight;
 
-let bottom;
+let bottom = new Group();
+let cylinder;
 let submarine =  new THREE.Object3D();
 let submarinePropeller = new Group();
 let bomb = new THREE.Object3D();
+let stones = new THREE.Group();
+
 let pause = false, up = false, down = false;
 
 let moveSpeed = 40;
-let upperBorder = 40;
-let bottomBorder = 2;
+let upperBorder = 36;
+let bottomBorder = -1;
 window.gameOver = false;
 const bombArrays = new THREE.Group();
 const backBombArrays = new THREE.Group();
@@ -47,6 +50,7 @@ let mousePos = {};
 let bombArrayCounter = 0;
 let bombStartCounter = 0;
 let inter = false;
+
 addInfo('bombSpeed', bombSpeed, info);
 addInfo('time', 'Time', info);
 
@@ -77,11 +81,12 @@ function init() {
 	createScene();
 	createLights();
     debug();
+    loadStones();
 	loadSubmarine();
 	createBottom();
     loadBomb();
     
-
+    
 	loop();
 
     keyboardHandler();
@@ -141,6 +146,9 @@ function keyboardHandler() {
 }
 function continueGame(){
     if (!gameOver) {
+        
+        controls.enabled = false;
+        
         callTimer();
     
     }
@@ -154,6 +162,7 @@ function continueGame(){
     
 }
 function makePause(){
+    controls.enabled = true;
     clearInterval(window.timer);
                     scene.getObjectByName('subBox').visible = true;
                     scene.traverse(function(child) {
@@ -189,13 +198,18 @@ function createScene() {
 		farSubmarine
 		);
        
-	camera.position.x = -44;
-	camera.position.z = 33;
-	camera.position.y =28;
-    camera.rotation.x = -0.46993949433741544;
-    camera.rotation.y = -1.0001786311740763;
-    camera.rotation.z =  -0.40392160424921664;
-	
+	camera.position.x = -36.1;
+	camera.position.y = 46.1838221607173;
+	camera.position.z = 43.891655291124394;
+
+    camera.rotation.x = -0.7767204360636446;
+    camera.rotation.y = -1.0613354406014759;
+    camera.rotation.z =  -0.7091121719464398;
+    
+	camera.quaternion.w =  0.825161865567765;
+    camera.quaternion.x = -0.2147798222998377;
+    camera.quaternion.y =  -0.5056251584166417;
+    camera.quaternion.z =  -0.13160821677130105;
     console.log(camera.rotation);
 	renderer = new THREE.WebGLRenderer({ 
 		
@@ -214,6 +228,8 @@ function createScene() {
 	
 	window.addEventListener('resize', WindowResize, false);
     // Если окно изменится - обновить контент
+     window.controls = new OrbitControls( camera, renderer.domElement );
+     controls.enabled = false;
 }
 function debug(){
     const size = 10;
@@ -243,8 +259,9 @@ function createLights(){
     scene.add(hemisphereLight);  
 	
     
-    let light = new THREE.SpotLight(0xffa95c,1.5);
-    light.position.set(-60,50,50);
+    let light = new THREE.SpotLight(0xffa95c,1.5, 500, Math.PI/3, 0.5, 2);
+    
+    light.position.set(-60,70,50);
     light.castShadow = true;
     light.bias = -0.004;
     scene.add( light );
@@ -257,16 +274,16 @@ function createLights(){
 }
 
   function Bottom(){
-   let geometry = new THREE.CylinderGeometry(150,100,300,40,10);
+   let geometry = new THREE.CylinderGeometry(128,128,400,60,10);
    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
 
    
 
    let material = new THREE.MeshPhongMaterial({
     color: colors.blue,
-    transparent:true,
+    transparent:false,
     opacity:.7,
-    shading:THREE.FlatShading,
+    
     receiveShadow: true
 });
 
@@ -277,10 +294,11 @@ this.mesh.receiveShadow = true;
 
 
 function createBottom(){
-    bottom = new Bottom();
-    bottom.mesh.position.y = -125;
-    bottom.receiveShadow = true;
-    scene.add(bottom.mesh);
+    cylinder = new Bottom();
+    cylinder.receiveShadow = true;
+    bottom.add(cylinder.mesh);
+    bottom.position.y = -140;
+    scene.add(bottom);
 }
 
 function loop(){
@@ -288,10 +306,10 @@ function loop(){
     
     if(pause == false && gameOver==false){
         updateInfo('time', Math.floor( clock.getElapsedTime()*10)/10);
-        bottom.mesh.rotation.z += bombSpeed/50*delta;  
+        cylinder.mesh.rotation.z += bombSpeed/50*delta;  
         bombUpdate(); 
         submarineUpdate();   
-        
+        stones.rotation.z +=  bombSpeed/50*delta;
         scene.traverse(function(child) {
             if (child.name === "bombBoxHelper") {
                 let bombBox = new Box3().setFromObject(child.parent);
@@ -303,11 +321,11 @@ function loop(){
 
                 subBox.min.x += vec1.x-1;
                 subBox.min.y += vec1.y;
-                subBox.min.z += vec1.z-5;
+                subBox.min.z += vec1.z-2;
 
                 subBox.max.x += vec1.x+1;
                 subBox.max.y += vec1.y;
-                subBox.max.z += vec1.z+5;
+                subBox.max.z += vec1.z+2;
                 bombBox.min.x += vec2.x;
                 bombBox.min.y += vec2.y;
                 bombBox.min.z += vec2.z;
@@ -320,6 +338,7 @@ function loop(){
                 if (inter ==true) {
                     
                     addInfo('over', 'GAME OVER', gameOverInfo);
+                    let over = document.getElementById('over');
                     let keyframes =[
                         { // from
                           opacity: 0,
@@ -339,15 +358,10 @@ function loop(){
                       setTimeout(() => {anim.reverse();anim2.reverse();}, 2000);
                       gameOverInfo.style.opacity = 0;
                     }
-                    setTimeout(() => {
-                        updateInfo('over', 'Press r to restart');
-                        over.style.fontSize = 30 + 'px';
-                        animationHide();
-                    }, 4000);
                     
                     window.gameOver = true;
                     clearInterval(window.timer);
-                    //const controls = new OrbitControls( camera, renderer.domElement );
+
                    
                     
                 }
@@ -391,15 +405,17 @@ function bombUpdate(){
     
 }
 function submarineUpdate(){
-    if (submarine.scene) {
+    if (submarine.scene &&pause ==false) {
         if (clock.elapsedTime<1) {
             submarine.scene.translateY(moveSpeed/2*delta);
         }
-        if(Math.floor(clock.elapsedTime)%2==0){
+        if(Math.floor(clock.elapsedTime)%2==0 && clock.elapsedTime>1){
             submarine.scene.translateZ(2*delta);
+            submarine.scene.rotation.x += delta/4;
         } 
         else{
             submarine.scene.translateZ(-2*delta);
+            submarine.scene.rotation.x -= delta/4;
         }
         if (Math.random()<0.5) {
             submarine.scene.translateX(2*delta);
@@ -419,6 +435,27 @@ function submarineUpdate(){
     submarinePropeller.rotateX(bombSpeed/2*delta);  
 
 }
+async function loadStones(){
+    for (let i = 1; i < 5; i++) {
+        let stone1 = await loadModel(`./obj/stones`+i+`.gltf`);
+        stone1 = stone1.scene;
+        stones.add(stone1);
+        
+    }
+    let seaweed = await loadModel(`./obj/seaweed.glb`);
+    seaweed = seaweed.scene;
+    seaweed.name = 'seaweed';
+    stones.add(seaweed);
+    stones.position.y;
+    bottom.add(stones);
+
+
+    for (let i = 0; i < 30; i++) {
+        createStones();
+        
+    }
+}
+
 async function loadSubmarine(){
     //console.log('creating submarine');
     submarine = await loadModel('./obj/Submarine.glb');
@@ -432,8 +469,6 @@ async function loadSubmarine(){
     console.log(submarinePropeller);
     submarine.scene.add(submarinePropeller);
     submarine.name = 'submarine';
-    submarine.scene.castShadow = true;
-    submarine.scene.receiveShadow = true;
     scene.add( submarine.scene);
     console.log(submarine);
     
@@ -441,6 +476,19 @@ async function loadSubmarine(){
         boxHelper.name = 'subBox';
         boxHelper.visible = false;
         submarine.scene.add(boxHelper);
+    let submarineLight = new THREE.SpotLight(0xffa95c,3, 150, Math.PI/6, 0.5, 2);
+        submarineLight.position.set(0,5,-2);
+        
+        
+    let helperLight = new THREE.SpotLightHelper(submarineLight);
+        let point = new Object3D (); 
+        point.position.x = -20;
+        point.add(submarineLight);
+        submarine.scene.add(point);
+        submarineLight.castShadow = true;
+        
+        
+        
     
 }
 
@@ -456,9 +504,53 @@ async function loadBomb(){
     scene.add(bombArrays);
     scene.add(backBombArrays);
 }
+function createStones(){
+    let amount = Math.round( Math.random()*2)+3;
+    let stonesArray = new Group();
+    stonesArray.position.y;
+    stonesArray.name = 'stonesArray' + bombArrayCounter;
+    var cryptoArray = new Uint8Array(amount);
+        window.crypto.getRandomValues(cryptoArray);
+
+        //console.log("numbers:");
+        for (var j = 0; j < cryptoArray.length; j++) {
+        //console.log(cryptoArray[j]);
+        }
+    for (let i = 0; i < amount; i++) {
+        
+        let obj = new Object3D();
+        
+        for (let i = 0; i < 4; i++) {
+            window.crypto.getRandomValues(cryptoArray);
+            obj.copy(stones.children[i], true);
+            
+            
+            let boxHelper = new THREE.BoxHelper( obj, 0xffff00 );
+            boxHelper.name = 'stoneBoxHelper';
+            boxHelper.visible = false;
+            obj.add(boxHelper);
+        
+        
+            obj.name = 'stone' + i;
+            let randPosition =  cryptoArray[i] ;
+            let randPosition2 = (Math.random()*2)-1
+            obj.position.set(randPosition2,127.5, randPosition-120);
+            obj.rotation.y = Math.PI/360*randPosition;
+            let scale  = Math.random()*1.2+1;
+            obj.scale.set(scale,scale,scale);
+            stonesArray.add(obj);
+        }
+        
+        
+        
+    }
+    stonesArray.rotation.z +=Math.random()*30;
+    stones.add(stonesArray);
+}
+
 function callTimer(){
     if (!gameOver) {
-        window.timer = setInterval(() =>createBombs(), 1000 + (1000 * Math.random()));
+        window.timer = setInterval(() =>{createBombs(); }, 500 + (1500 * Math.random()));
     }
     
 }
@@ -486,7 +578,7 @@ function createBombs(){
         obj.name = 'bomb' + i;
         let randPosition = Math.floor( Math.random()*5*amount);
         let randPosition2 = ( Math.random()*5)-10;
-        let randPosition3 = ( Math.random()*5)-2.5;
+        let randPosition3 = ( Math.random()*8)-4;
         obj.position.set(randPosition2+400, randPosition, randPosition3);
         bombArray.add(obj);
         
@@ -506,10 +598,15 @@ function createBombs(){
         n.receiveShadow = false;
         if(n.material.map) n.material.map.anisotropy = 16; 
       }});
+    stones.traverse(n => { if ( n.isMesh ) {
+        n.castShadow = true; 
+        n.receiveShadow = false;
+        if(n.material.map) n.material.map.anisotropy = 16; 
+      }});
 
 }
 function createBackgroundBombs(){
-    //console.log(camera);
+    console.log(camera);
     let amount = Math.floor( Math.random()*50)+10;
     let backBombArray = new Group();
     backBombArray.name = 'backBombArray';
@@ -543,4 +640,4 @@ function updateBackgroundBombs(){
 }
 
 
-    
+
