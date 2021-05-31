@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Box3, Box3Helper, Group, Object3D, ObjectLoader, Vector3 } from 'three';
+import { Box3, Box3Helper, DirectionalLightHelper, Group, Object3D, ObjectLoader, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -11,7 +11,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 const loader = new GLTFLoader();
 
 let info = document.getElementById('info');
-
+let gameOverInfo = document.getElementById('gameOver');
+gameOverInfo.style.opacity = 0;
 //let iiss = true;
 let clock = new THREE.Clock();
 let delta = 0;
@@ -37,15 +38,18 @@ let pause = false, up = false, down = false;
 let moveSpeed = 40;
 let upperBorder = 40;
 let bottomBorder = 2;
-
+window.gameOver = false;
 const bombArrays = new THREE.Group();
-let bombSpeed = 20;
+const backBombArrays = new THREE.Group();
+let bombSpeed = 15;
+let bombSpeedStart = bombSpeed;
 let mousePos = {};
 let bombArrayCounter = 0;
 let bombStartCounter = 0;
 let inter = false;
-addInfo('bombArrayCounterInfo',bombArrayCounter, info);
-addInfo('intersection', inter, info);
+addInfo('bombSpeed', bombSpeed, info);
+addInfo('time', 'Time', info);
+
 function addInfo(infoId,value, div){
     let p = document.createElement("p");
     let text = document.createTextNode(value);
@@ -99,24 +103,12 @@ function keyboardHandler() {
             case " ":
                 
                 if (pause==false) {
+                    makePause();
                     
-                    clearInterval(window.timer);
-                    scene.getObjectByName('subBox').visible = true;
-                    scene.traverse(function(child) {
-                        if (child.name === "bombBoxHelper") {
-                            child.visible = true;
-                        }});
-                    pause = true;
                 }
                 else {
+                    continueGame();
                     
-                    callTimer();
-                    pause =false;
-                    scene.getObjectByName('subBox').visible = false;
-                    scene.traverse(function(child) {
-                        if (child.name === "bombBoxHelper") {
-                            child.visible = false;
-                        }});
                 }
                 break;
             case "w":
@@ -127,6 +119,9 @@ function keyboardHandler() {
             case "s":
                 down = true;
                 //console.log( 'submarine x: ' + submarine.scene.position.y);
+                break;
+            case "r":
+                document.location.reload();
                 break;
             }
             
@@ -144,6 +139,34 @@ function keyboardHandler() {
         }
     }));
 }
+function continueGame(){
+    if (!gameOver) {
+        callTimer();
+    
+    }
+    pause =false;
+    scene.getObjectByName('subBox').visible = false;
+    scene.traverse(function(child) {
+        if (child.name === "bombBoxHelper") {
+            child.visible = false;
+        }});
+    
+    
+}
+function makePause(){
+    clearInterval(window.timer);
+                    scene.getObjectByName('subBox').visible = true;
+                    scene.traverse(function(child) {
+                        if (child.name === "bombBoxHelper") {
+                            child.visible = true;
+                        }});
+                    pause = true;
+}
+function rotateObject(object, degreeX=0, degreeY=0, degreeZ=0) {
+    object.rotateX(THREE.Math.degToRad(degreeX));
+    object.rotateY(THREE.Math.degToRad(degreeY));
+    object.rotateZ(THREE.Math.degToRad(degreeZ));
+ }
 function createScene() {
     
 
@@ -153,7 +176,7 @@ function createScene() {
 	scene = new THREE.Scene();
 
 
-	scene.fog = new THREE.Fog(0x1d2591, 50, 300);
+	scene.fog = new THREE.Fog(0x1d2591, 50, 110);
 	
 	aspectRatio = WIDTH / HEIGHT;
 	fieldOfView = 60;
@@ -165,11 +188,15 @@ function createScene() {
 		nearSubmarine,
 		farSubmarine
 		);
+       
+	camera.position.x = -44;
+	camera.position.z = 33;
+	camera.position.y =28;
+    camera.rotation.x = -0.46993949433741544;
+    camera.rotation.y = -1.0001786311740763;
+    camera.rotation.z =  -0.40392160424921664;
 	
-	camera.position.x = 0;
-	camera.position.z = 50;
-	camera.position.y = 25;
-	
+    console.log(camera.rotation);
 	renderer = new THREE.WebGLRenderer({ 
 		
 		alpha: true, 
@@ -178,7 +205,8 @@ function createScene() {
 
 	renderer.setSize(WIDTH, HEIGHT);
 	renderer.shadowMap.enabled = true;
-	const controls = new OrbitControls( camera, renderer.domElement );
+    renderer.shadowMapSoft = true;
+	
     const loader = new ObjectLoader();
 	container = document.querySelector(".sea");
     container.appendChild(renderer.domElement);
@@ -193,6 +221,7 @@ const divisions = 10;
 
 const gridHelper = new THREE.GridHelper( size, divisions );
 scene.add( gridHelper );
+gridHelper.visible = false;
 }
 function WindowResize() {
     HEIGHT = window.innerHeight;
@@ -207,26 +236,28 @@ function WindowResize() {
 
 
 function createLights(){
-    hemisphereLight = new THREE.HemisphereLight(0xaaaaaa,0x000000, .9);
-    shadowLight = new THREE.DirectionalLight(0xffffff, .9);
-    shadowLight.position.set(150, 350, 350);
-    shadowLight.castShadow = true;
-    shadowLight.shadow.camera.left = -400;
-	shadowLight.shadow.camera.right = 400;
-	shadowLight.shadow.camera.top = 400;
-	shadowLight.shadow.camera.bottom = -400;
-	shadowLight.shadow.camera.near = 1;
-	shadowLight.shadow.camera.far = 1000;
-
-    shadowLight.shadow.mapSize.width = 1024;
-	shadowLight.shadow.mapSize.height = 1024;
-
+    
+    hemisphereLight = new THREE.HemisphereLight(0xaaaaaa,0x000000, .1);
+    
+    
     scene.add(hemisphereLight);  
-	scene.add(shadowLight);
+	
+    
+    let light = new THREE.SpotLight(0xffa95c,1.5);
+    light.position.set(-60,50,50);
+    light.castShadow = true;
+    light.bias = -0.004;
+    scene.add( light );
+
+    const spotLightHelper = new THREE.SpotLightHelper( light );
+    scene.add( spotLightHelper );
+    spotLightHelper.visible = false;
+    
+
 }
 
   function Bottom(){
-   let geometry = new THREE.CylinderGeometry(100,100,200,40,10);
+   let geometry = new THREE.CylinderGeometry(150,100,300,40,10);
    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
 
    
@@ -234,8 +265,9 @@ function createLights(){
    let material = new THREE.MeshPhongMaterial({
     color: colors.blue,
     transparent:true,
-    opacity:.6,
+    opacity:.7,
     shading:THREE.FlatShading,
+    receiveShadow: true
 });
 
 this.mesh = new THREE.Mesh(geometry, material);
@@ -246,7 +278,7 @@ this.mesh.receiveShadow = true;
 
 function createBottom(){
     bottom = new Bottom();
-    bottom.mesh.position.y = -100;
+    bottom.mesh.position.y = -125;
     bottom.receiveShadow = true;
     scene.add(bottom.mesh);
 }
@@ -254,9 +286,9 @@ function createBottom(){
 function loop(){
     delta = clock.getDelta();
     
-    if(pause == false){
-        
-        bottom.mesh.rotation.z += .3*delta;  
+    if(pause == false && gameOver==false){
+        updateInfo('time', Math.floor( clock.getElapsedTime()*10)/10);
+        bottom.mesh.rotation.z += bombSpeed/50*delta;  
         bombUpdate(); 
         submarineUpdate();   
         
@@ -287,11 +319,39 @@ function loop(){
                 inter = subBox.intersectsBox(bombBox);
                 if (inter ==true) {
                     
+                    addInfo('over', 'GAME OVER', gameOverInfo);
+                    let keyframes =[
+                        { // from
+                          opacity: 0,
+                          width:200 + 'px'
+                        },
+                        { // to
+                          opacity: 1,
+                          width: 500 + 'px'
+                        }
+                      ];
+                      animationHide();
+                    function animationHide(){
+                        let anim = gameOverInfo.animate(keyframes, 2000);
+                    let anim2 = over.animate(keyframes, 2000);
+                      anim.play();
+                      anim2.play();
+                      setTimeout(() => {anim.reverse();anim2.reverse();}, 2000);
+                      gameOverInfo.style.opacity = 0;
+                    }
                     setTimeout(() => {
-                        console.log('intersect');
-                    }, 10);
+                        updateInfo('over', 'Press r to restart');
+                        over.style.fontSize = 30 + 'px';
+                        animationHide();
+                    }, 4000);
+                    
+                    window.gameOver = true;
+                    clearInterval(window.timer);
+                    //const controls = new OrbitControls( camera, renderer.domElement );
+                   
+                    
                 }
-                updateInfo('intersection', inter);
+                
                 
             }
           });
@@ -303,27 +363,29 @@ function loop(){
         
     }
     
+    
+    
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
 }
 
 
-
 function bombUpdate(){
     for (let i = bombStartCounter; i < bombArrayCounter; i++) {
         let array = bombArrays.getObjectByName('bombArray' + i);
-            array.translateX(-bombSpeed*delta);
+            array.translateX(-bombSpeed*4*delta);
             
             
         
-        if (array.position.x<-150) {
+        if (array.position.x<-600) {
             bombArrays.remove(bombArrays.getObjectByName('bombArray' + i));
             bombStartCounter++;
         }
         
     }
+    updateBackgroundBombs();
     
-    updateInfo('bombArrayCounterInfo','Bomb Arrays: '+bombArrayCounter);
+    
     
     
     
@@ -336,9 +398,7 @@ function submarineUpdate(){
     if (down ==true && submarine.scene.position.y > bottomBorder) {
         submarine.scene.translateY( -moveSpeed *delta);
     }
-    submarinePropeller.rotateX(5*delta);  
-}
-function check() {
+    submarinePropeller.rotateX(bombSpeed/2*delta);  
 }
 async function loadSubmarine(){
     //console.log('creating submarine');
@@ -354,6 +414,7 @@ async function loadSubmarine(){
     submarine.scene.add(submarinePropeller);
     submarine.name = 'submarine';
     submarine.scene.castShadow = true;
+    submarine.scene.receiveShadow = true;
     scene.add( submarine.scene);
     console.log(submarine);
     
@@ -374,12 +435,19 @@ async function loadBomb(){
     
    
     scene.add(bombArrays);
+    scene.add(backBombArrays);
 }
 function callTimer(){
-    window.timer = setInterval(() =>createBombs(), 5000);
+    if (!gameOver) {
+        window.timer = setInterval(() =>createBombs(), 1000 + (1000 * Math.random()));
+    }
+    
 }
 function createBombs(){
-    
+
+    bombSpeed += 1; // Speed up bombs!
+    updateInfo('bombSpeed','Speed: '+ (bombSpeed-bombSpeedStart) );
+    createBackgroundBombs();
     let amount = Math.floor( Math.random()*10)+2;
     let bombArray = new Group();
     bombArray.name = 'bombArray' + bombArrayCounter;
@@ -395,19 +463,63 @@ function createBombs(){
 
         
         
-        bombArray.add(obj);
+        
         obj.name = 'bomb' + i;
         let randPosition = Math.floor( Math.random()*5*amount);
         let randPosition2 = ( Math.random()*5)-10;
         let randPosition3 = ( Math.random()*5)-2.5;
-        obj.position.set(randPosition2+100, randPosition, randPosition3);
-        
+        obj.position.set(randPosition2+400, randPosition, randPosition3);
+        bombArray.add(obj);
         
     }
     
     bombArrays.add(bombArray);
     //console.log(bombArrays);
     bombArrayCounter++;
+    
+    scene.traverse(n => { if ( n.isMesh ) {
+        n.castShadow = true; 
+        n.receiveShadow = true;
+        if(n.material.map) n.material.map.anisotropy = 16; 
+      }});
+    submarine.scene.traverse(n => { if ( n.isMesh ) {
+        n.castShadow = true; 
+        n.receiveShadow = false;
+        if(n.material.map) n.material.map.anisotropy = 16; 
+      }});
+
+}
+function createBackgroundBombs(){
+    //console.log(camera);
+    let amount = Math.floor( Math.random()*50)+10;
+    let backBombArray = new Group();
+    backBombArray.name = 'backBombArray';
+    for (let i = 0; i < amount; i++) {
+        
+        let randPosition = Math.floor( Math.random()*5*amount);
+        let randPosition2 = ( Math.random()*10*(amount/2))-5;
+        let randPosition3 = ( Math.random()*15*amount)-250;
+
+        
+        
+        if (randPosition3>10 ||randPosition3<-10) {
+            let object = new Object3D();
+            object.copy(bomb.scene, true);
+            object.position.set(randPosition2+100, randPosition, randPosition3);
+            backBombArray.add(object);
+        }
+        
+    }
+    backBombArrays.add(backBombArray);
+}
+function updateBackgroundBombs(){
+    for (let i = 0; i < backBombArrays.children.length; i++) {
+        backBombArrays.children[i].translateX(-bombSpeed*2*delta);
+        
+        if (backBombArrays.children[i].position.x<-600) {
+            backBombArrays.remove( backBombArrays.getObjectByName('backBombArray'));
+        }
+    }
     
 }
 

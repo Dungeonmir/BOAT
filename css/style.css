@@ -28,3 +28,30 @@
 	position: absolute;
 	top: 100px;
 }
+#gameOver{
+	position: absolute;
+	margin: auto;
+  top: 0; left: 0; bottom: 0; right: 0;
+	background-color: #0c1266be;
+	padding: 10px 10px;
+	border-radius: 7px;
+	width: max-content;
+	height: fit-content;
+	pointer-events: none;
+	font-size: 30px;
+	
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	opacity: 0;
+}
+#gameOver p{
+
+	min-width: 200px;
+	color: rgb(67, 31, 197);
+	font-weight: bold;
+	padding: 0px 20px;
+	opacity: 0;
+}
