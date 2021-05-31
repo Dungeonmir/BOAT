@@ -51,8 +51,8 @@ let bombArrayCounter = 0;
 let bombStartCounter = 0;
 let inter = false;
 
-addInfo('bombSpeed', bombSpeed, info);
-addInfo('time', 'Time', info);
+addInfo('bombSpeed', 'Speed: '+ (bombSpeed-bombSpeedStart), info);
+addInfo('time', 'Time: 0', info);
 
 function addInfo(infoId,value, div){
     let p = document.createElement("p");
@@ -86,11 +86,14 @@ function init() {
 	createBottom();
     loadBomb();
     
-    
-	loop();
+    setTimeout(() => {
+        loop(); 
+        keyboardHandler();
+        document.addEventListener('mousemove', MouseHandler, false);
+    }, 1500);
+	
 
-    keyboardHandler();
-    document.addEventListener('mousemove', MouseHandler, false);
+   
     
 }
 function MouseHandler(e) {
@@ -304,7 +307,7 @@ function loop(){
     delta = clock.getDelta();
     
     if(pause == false && gameOver==false){
-        updateInfo('time', Math.floor( clock.getElapsedTime()*10)/10);
+        updateInfo('time', 'Time: ' + Math.floor( clock.getElapsedTime()*10)/10);
         cylinder.mesh.rotation.z += bombSpeed/50*delta;  
         bombUpdate(); 
         submarineUpdate();   
@@ -491,7 +494,6 @@ async function loadBomb(){
     //console.log('creating bombs');
     bomb = await loadModel('./obj/Bomb.gltf');
     
-    createBombs();
     callTimer();
     
     
@@ -551,7 +553,7 @@ function callTimer(){
 }
 function createBombs(){
 
-    bombSpeed += 1; // Speed up bombs!
+    bombSpeed += 0.25; // Speed up bombs!
     updateInfo('bombSpeed','Speed: '+ (bombSpeed-bombSpeedStart) );
     createBackgroundBombs();
     let amount = Math.floor( Math.random()*10)+2;
