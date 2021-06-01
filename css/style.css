@@ -14,14 +14,18 @@
 	top: 5px;
 	left: 85px;
 	background-color: #03032b;
-	padding: 2px 5px;
+	padding: 5px 5px;
 	width: fit-content;
 	height: fit-content;
 	border-radius: 7px;
 	pointer-events: none;
+	display: flex;
+	flex-wrap: wrap;
+
 }
 #info p{
 	color: aquamarine;
+	padding:0px 5px;
 }
 #stats{
 	position: absolute;
