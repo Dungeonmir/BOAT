@@ -61,6 +61,7 @@ let gamesPlayed = localStorage.getItem('gamesPlayed');
 maxTime = (maxTime ==null)? 0 :maxTime;
 gamesPlayed = (gamesPlayed==null)? 0 : gamesPlayed;
 
+addInfo('controls', 'Controls: w,s to move. r to restart', info);
 addInfo('maxTime','Max time: ' +  Math.floor(maxTime*10)/10, info);
 addInfo('gamesPlayed','Games played: ' + gamesPlayed, info);
 addInfo('bombSpeed', 'Speed: '+ (bombSpeed-bombSpeedStart), info);
